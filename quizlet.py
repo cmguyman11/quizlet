@@ -105,21 +105,27 @@ def find_synonym(word, choices, embeddings, comparison_metric):
     #########################################################
     ## TODO: find synonym                                  ##
     #########################################################
-    minDist = math.inf
     word_embeddings = embeddings[word]
-    for choice in choices:
-        choice_embeddings = embeddings[choice]
-        dist = 0
-        if comparison_metric == 'euc_dist':
+    if comparison_metric == 'euc_dist':
+        minDist = math.inf
+        for choice in choices:
+            choice_embeddings = embeddings[choice]
             dist = euclidean_distance(word_embeddings, choice_embeddings)
-        else:
-            dist = cosine_similarity(word_embeddings, choice_embeddings)
-        if dist < minDist:
-            minDist = dist
-            answer = choice
+            if dist < minDist:
+                minDist = dist
+                answer = choice
+    else:
+        maxSim = 0
+        for choice in choices:
+            choice_embeddings = embeddings[choice]
+            sim = cosine_similarity(word_embeddings, choice_embeddings)
+            if sim > maxSim:
+                maxSim = sim
+                answer = choice
 
-    # if word == "sanguine" and comparison_metric == 'euc_dist':
+    # if word == "sanguine" and comparison_metric != 'euc_dist':
     #     print(answer)
+
     #########################################################
     ## End TODO                                            ##
     ######################################################### 
@@ -181,18 +187,16 @@ def find_analogy_word(a, b, aa, choices, embeddings):
     ## TODO: analogy                                       ##
     #########################################################
     
-    minDist = math.inf
     a_embeddings = embeddings[a]
     b_embeddings = embeddings[b]
     aa_embeddings = embeddings[aa]
     vec = b_embeddings - a_embeddings + aa_embeddings
+    maxSim = 0
     for choice in choices:
         choice_embeddings = embeddings[choice]
-
-        dist = euclidean_distance(vec, choice_embeddings)
-
-        if dist < minDist:
-            minDist = dist
+        sim = cosine_similarity(vec, choice_embeddings)
+        if sim > maxSim:
+            maxSim = sim
             answer = choice
 
     #########################################################
@@ -244,7 +248,9 @@ def get_embedding(s, embeddings, use_POS=False, POS_weights=None):
                 if POS in POS_weights:
                     weight = POS_weights[POS]
                     word_embedding = [x * weight for x in word_embedding]
-            embed += word_embedding
+                    embed += word_embedding
+            else:
+                embed += word_embedding
     #########################################################
     ## End TODO                                            ##
     #########################################################
@@ -309,6 +315,25 @@ def occupation_exploration(occupations, embeddings):
     ## TODO: get 5 occupations closest to 'man' & 'woman'  ##
     #########################################################
 
+    man_embeddings = embeddings['man']
+    woman_embeddings = embeddings['woman']
+    #get cosine similarities for all occupations 
+    man_similarities = {}
+    woman_similarities = {}
+    for job in occupations:
+        job_embeddings = embeddings[job]
+        sim_man = cosine_similarity(job_embeddings, man_embeddings)
+        sim_woman = cosine_similarity(job_embeddings, woman_embeddings)
+        man_similarities[job] = sim_man
+        woman_similarities[job] = sim_woman
+
+    sorted_man = sorted(man_similarities.items(), key=operator.itemgetter(1), reverse=True)
+    sorted_woman = sorted(woman_similarities.items(), key=operator.itemgetter(1), reverse=True)
+
+    for i in range(5):
+        top_man_occs.append((sorted_man[i])[0])
+        top_woman_occs.append((sorted_woman[i])[0])
+
     #########################################################
     ## End TODO                                            ##
     #########################################################
@@ -321,13 +346,28 @@ def part4_written():
     describe what you find, and why you think this occurs.
     '''
     #########################################################
-    ## TODO: replace string with your answer               ##
+    ##  replace string with your answer               ##
     ######################################################### 
     answer = """
-    TODO fill this in
+    my answer is as follows: occupations closest to "man" - you answered:
+ 1. teacher
+ 2. actor
+ 3. worker
+ 4. lawyer
+ 5. warrior
+occupations closest to "woman" - you answered:
+ 1. nurse
+ 2. teacher
+ 3. worker
+ 4. maid
+ 5. waitress
+
+ It's definitely curious that there's some overlap in "teacher" and "worker", as they appear on both lists.
+ This is probably because of historical context in which both men and woman have been the predominant teachers/workers
+ at different times in history. 
     """
     #########################################################
-    ## End TODO                                            ##
+    ## End                                           ##
     ######################################################### 
     return answer
 
