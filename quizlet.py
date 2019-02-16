@@ -36,12 +36,22 @@ def cosine_similarity(v1, v2):
     Returns:
         cosine_sim (float): the cosine similarity between v1, v2
     '''
-    cosine_sim = 0
     #########################################################
     ## TODO: calculate cosine similarity between v1, v2    ##
     #########################################################
+    v1_length = 0
+    v2_length = 0
+    dot_prod = 0
+    for i in range(len(v1)):
+        v1_length += (v1[i])**2
+        v2_length += (v2[i])**2
+        dot_prod += (v1[i])*(v2[i])
+    v1_length = v1_length**(0.5)
+    v2_length = v2_length**(0.5)
 
-    #########################################################
+    cosine_sim = dot_prod/(v1_length*v2_length)
+
+    ########################################################
     ## End TODO                                            ##
     #########################################################
     return cosine_sim   
@@ -61,9 +71,15 @@ def euclidean_distance(v1, v2):
     ## TODO: calculate euclidean distance between v1, v2   ##
     #########################################################
 
+    for i in range(len(v1)):
+        diff = v1[i] - v2[i]
+        euclidean_dist += diff**2
+    euclidean_dist = euclidean_dist**(.5)
+
     #########################################################
     ## End TODO                                           ##
     #########################################################
+
     return euclidean_dist                 
 
 def find_synonym(word, choices, embeddings, comparison_metric):
@@ -89,7 +105,21 @@ def find_synonym(word, choices, embeddings, comparison_metric):
     #########################################################
     ## TODO: find synonym                                  ##
     #########################################################
+    minDist = math.inf
+    word_embeddings = embeddings[word]
+    for choice in choices:
+        choice_embeddings = embeddings[choice]
+        dist = 0
+        if comparison_metric == 'euc_dist':
+            dist = euclidean_distance(word_embeddings, choice_embeddings)
+        else:
+            dist = cosine_similarity(word_embeddings, choice_embeddings)
+        if dist < minDist:
+            minDist = dist
+            answer = choice
 
+    # if word == "sanguine" and comparison_metric == 'euc_dist':
+    #     print(answer)
     #########################################################
     ## End TODO                                            ##
     ######################################################### 
@@ -111,13 +141,16 @@ def part1_written():
     it got the question wrong.
     '''
     #########################################################
-    ## TODO: replace string with your answer               ##
+    ## replace string with your answer               ##
     ######################################################### 
     answer = """
-    TODO fill this in
+        It chooses "pessimistic", because pessimistic is actually an antonym of "sanguine".
+        This means that both words are used identically within the same context, so if you're
+        calculaitng using word embeddings, they will look like they appear around the same words,
+        and therefore appear to have the same definition.
     """
     #########################################################
-    ## End TODO                                            ##
+    ## End                                         ##
     ######################################################### 
     return answer
 
@@ -147,12 +180,25 @@ def find_analogy_word(a, b, aa, choices, embeddings):
     #########################################################
     ## TODO: analogy                                       ##
     #########################################################
+    
+    minDist = math.inf
+    a_embeddings = embeddings[a]
+    b_embeddings = embeddings[b]
+    aa_embeddings = embeddings[aa]
+    vec = b_embeddings - a_embeddings + aa_embeddings
+    for choice in choices:
+        choice_embeddings = embeddings[choice]
+
+        dist = euclidean_distance(vec, choice_embeddings)
+
+        if dist < minDist:
+            minDist = dist
+            answer = choice
 
     #########################################################
     ## End TODO                                            ##
     #########################################################
     return answer
-
 
 # ---------------------------------------------------------------------------
 # Part 3: Sentence Similarity                                               #
@@ -186,7 +232,19 @@ def get_embedding(s, embeddings, use_POS=False, POS_weights=None):
     #########################################################
     ## TODO: get embedding                                 ##
     #########################################################
-
+    words = word_tokenize(s)
+    tagged_tokens = nltk.pos_tag(words)
+    for i in range(len(words)):
+        word = words[i]
+        if word in embeddings:
+            word_embedding = embeddings[word]
+            if use_POS:
+                word_tuple = [item for item in tagged_tokens if item[0] == word][0]
+                POS = word_tuple[1]
+                if POS in POS_weights:
+                    weight = POS_weights[POS]
+                    word_embedding = [x * weight for x in word_embedding]
+            embed += word_embedding
     #########################################################
     ## End TODO                                            ##
     #########################################################
@@ -212,6 +270,10 @@ def get_similarity(s1, s2, embeddings, use_POS, POS_weights=None):
     #########################################################
     ## TODO: compute similarity                            ##
     #########################################################
+
+    s1_embedding = get_embedding(s1, embeddings, use_POS, POS_weights)
+    s2_embedding = get_embedding(s2, embeddings, use_POS, POS_weights)
+    similarity = cosine_similarity(s1_embedding, s2_embedding)
 
     #########################################################
     ## End TODO                                            ##
